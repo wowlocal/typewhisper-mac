@@ -291,6 +291,14 @@ private func settingsDestinationSections(_ destinations: [SettingsDestination]) 
 
     workspaceDestinations.append(settingsDestination(destinations, .integrations))
 
+    var systemDestinations = [
+        settingsDestination(destinations, .advanced)
+    ]
+    if let licenseDestination = settingsDestinationIfAvailable(destinations, .license) {
+        systemDestinations.append(licenseDestination)
+    }
+    systemDestinations.append(settingsDestination(destinations, .about))
+
     return [
         SettingsDestinationSection(
             id: "home",
@@ -306,11 +314,7 @@ private func settingsDestinationSections(_ destinations: [SettingsDestination]) 
         ),
         SettingsDestinationSection(
             id: "system",
-            destinations: [
-                settingsDestination(destinations, .advanced),
-                settingsDestination(destinations, .license),
-                settingsDestination(destinations, .about)
-            ]
+            destinations: systemDestinations
         )
     ]
 }

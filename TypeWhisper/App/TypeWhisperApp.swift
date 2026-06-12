@@ -475,6 +475,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private var appActivationObserver: NSObjectProtocol?
     private var workspaceWakeObserver: NSObjectProtocol?
     private var hasInteractiveForegroundContent = false
+    private var shouldOpenSettingsOnInitialLaunch = false
+    private var hasRequestedInitialManagedWindow = false
     private lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
 
     var updateChecker: UpdateChecker {
@@ -557,11 +559,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
             HomeViewModel.shared.showSetupWizard = true
             NSApp.setActivationPolicy(.regular)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.openSetupWindow()
+                self.requestInitialManagedWindow(id: "setup")
             }
         } else if PostUpdatePromptCoordinator.shared.shouldAutoOpenSettingsOnLaunch {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                self.openSettingsWindow()
+                self.requestInitialManagedWindow(id: "settings")
+            }
+        } else {
+            shouldOpenSettingsOnInitialLaunch = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.openSettingsOnInitialLaunchIfNeeded()
             }
         }
 
@@ -611,6 +618,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         )
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        openSettingsOnInitialLaunchIfNeeded()
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         if !hasVisibleManagedWindow {
             if HomeViewModel.shared.showSetupWizard {
@@ -634,6 +645,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     private func openSetupWindow() {
         ManagedAppWindowOpener.shared.open(id: "setup")
+    }
+
+    private func requestInitialManagedWindow(id: String) {
+        guard !hasRequestedInitialManagedWindow else { return }
+        hasRequestedInitialManagedWindow = true
+        ManagedAppWindowOpener.shared.open(id: id)
+    }
+
+    private func openSettingsOnInitialLaunchIfNeeded() {
+        guard shouldOpenSettingsOnInitialLaunch else { return }
+        shouldOpenSettingsOnInitialLaunch = false
+
+        guard !hasVisibleManagedWindow else { return }
+        requestInitialManagedWindow(id: "settings")
     }
 
     private func handleIncomingURL(_ url: URL) {
