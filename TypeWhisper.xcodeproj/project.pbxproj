@@ -5386,7 +5386,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/TypeWhisperPluginSDK/build/$(CONFIGURATION)/PackageFrameworks",
+					"$(SRCROOT)/TypeWhisperPluginSDK/build/$(CONFIGURATION)/PackageFrameworks",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Cartesia;
@@ -5394,6 +5394,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = CartesiaPlugin;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					/usr/lib/swift,
@@ -5406,7 +5407,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_INCLUDE_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/TypeWhisperPluginSDK/build/$(CONFIGURATION)",
+					"$(SRCROOT)/TypeWhisperPluginSDK/build/$(CONFIGURATION)",
 				);
 				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = bundle;
@@ -5422,7 +5423,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/TypeWhisperPluginSDK/build/$(CONFIGURATION)/PackageFrameworks",
+					"$(SRCROOT)/TypeWhisperPluginSDK/build/$(CONFIGURATION)/PackageFrameworks",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Cartesia;
@@ -5430,6 +5431,7 @@
 				INFOPLIST_KEY_NSPrincipalClass = CartesiaPlugin;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
 				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 					/usr/lib/swift,
@@ -5442,7 +5444,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_INCLUDE_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/TypeWhisperPluginSDK/build/$(CONFIGURATION)",
+					"$(SRCROOT)/TypeWhisperPluginSDK/build/$(CONFIGURATION)",
 				);
 				SWIFT_VERSION = 6.0;
 				WRAPPER_EXTENSION = bundle;
