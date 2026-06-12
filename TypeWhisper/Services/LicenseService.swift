@@ -198,9 +198,17 @@ final class LicenseService: ObservableObject {
         case supporter
     }
 
-    var isSupporter: Bool { supporterStatus == .active && supporterTier != nil }
-    var hasCommercialLicense: Bool { licenseStatus == .active }
+    var isSupporter: Bool {
+        guard !AppConstants.isPersonalBuild else { return false }
+        return supporterStatus == .active && supporterTier != nil
+    }
+
+    var hasCommercialLicense: Bool {
+        AppConstants.isPersonalBuild || licenseStatus == .active
+    }
+
     var supporterClaimProof: SupporterClaimProof? {
+        guard !AppConstants.isPersonalBuild else { return nil }
         guard supporterStatus == .active,
               let supporterTier,
               let stored = loadSupporterFromKeychain() else { return nil }
@@ -213,19 +221,23 @@ final class LicenseService: ObservableObject {
     }
 
     var needsWelcomeSheet: Bool {
-        !defaults.bool(forKey: UserDefaultsKeys.welcomeSheetShown)
+        guard !AppConstants.isPersonalBuild else { return false }
+        return !defaults.bool(forKey: UserDefaultsKeys.welcomeSheetShown)
     }
 
     var shouldShowReminder: Bool {
-        requiresCommercialLicense && licenseStatus != .active
+        guard !AppConstants.isPersonalBuild else { return false }
+        return requiresCommercialLicense && licenseStatus != .active
     }
 
     var requiresCommercialLicense: Bool {
-        usageIntent != .personalOSS
+        guard !AppConstants.isPersonalBuild else { return false }
+        return usageIntent != .personalOSS
     }
 
     var shouldShowWorkUsagePrompt: Bool {
-        usageIntent == .personalOSS && licenseStatus != .active
+        guard !AppConstants.isPersonalBuild else { return false }
+        return usageIntent == .personalOSS && licenseStatus != .active
     }
 
     // MARK: - Init
@@ -337,6 +349,7 @@ final class LicenseService: ObservableObject {
     }
 
     func validateLicense() async {
+        guard !AppConstants.isPersonalBuild else { return }
         guard let (key, activationId) = loadLicenseFromKeychain() else { return }
 
         do {
@@ -367,6 +380,7 @@ final class LicenseService: ObservableObject {
     }
 
     func validateIfNeeded() async {
+        guard !AppConstants.isPersonalBuild else { return }
         guard hasStoredLicense else {
             if licenseStatus != .unlicensed || licenseTier != nil {
                 licenseStatus = .unlicensed
@@ -390,6 +404,7 @@ final class LicenseService: ObservableObject {
     }
 
     func deactivateLicense() async {
+        guard !AppConstants.isPersonalBuild else { return }
         guard let (key, activationId) = loadLicenseFromKeychain() else { return }
         deactivationError = nil
 
@@ -430,6 +445,7 @@ final class LicenseService: ObservableObject {
     }
 
     func validateSupporterIfNeeded() async {
+        guard !AppConstants.isPersonalBuild else { return }
         guard let (key, activationId) = loadSupporterFromKeychain() else {
             if supporterStatus != .unlicensed || supporterTier != nil {
                 supporterStatus = .unlicensed
@@ -454,6 +470,7 @@ final class LicenseService: ObservableObject {
     }
 
     private func validateSupporter(key: String, activationId: String) async {
+        guard !AppConstants.isPersonalBuild else { return }
         do {
             let response = try await polarValidate(key: key, activationId: activationId)
             if response.status == "granted" {
@@ -481,6 +498,7 @@ final class LicenseService: ObservableObject {
     }
 
     func deactivateSupporterLicense() async {
+        guard !AppConstants.isPersonalBuild else { return }
         guard let (key, activationId) = loadSupporterFromKeychain() else { return }
         supporterDeactivationError = nil
 

@@ -32,6 +32,7 @@ final class PostUpdatePromptCoordinator {
     }
 
     var shouldPresentPrompt: Bool {
+        guard !AppConstants.isPersonalBuild else { return false }
         guard !currentSessionDismissed else { return false }
         guard !licenseService.needsWelcomeSheet else { return false }
         guard !hasActiveEntitlement else { return false }

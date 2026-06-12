@@ -189,6 +189,12 @@ enum MenuBarMenuSection: String, CaseIterable, Hashable {
         rawValue
     }
 
+    static var visibleCases: [MenuBarMenuSection] {
+        AppConstants.isPersonalBuild
+            ? allCases.filter { $0 != .updates }
+            : allCases
+    }
+
     var titleResource: LocalizedStringResource {
         switch self {
         case .general:
@@ -234,7 +240,7 @@ struct MenuBarView: View {
 
             Divider()
 
-            ForEach(MenuBarMenuSection.allCases, id: \.self) { section in
+            ForEach(MenuBarMenuSection.visibleCases, id: \.self) { section in
                 Section(String(localized: section.titleResource)) {
                     ForEach(section.items(hasRecoverableRecording: status.hasRecoverableRecording), id: \.self) { item in
                         menuItem(for: item)

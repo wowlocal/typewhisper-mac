@@ -22,11 +22,15 @@ struct PremiumSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                premiumHeader
-                if !license.hasCommercialLicense {
-                    premiumUpsell
-                } else {
+                if AppConstants.isPersonalBuild {
                     CloudFolderSyncSettingsView(controller: syncController)
+                } else {
+                    premiumHeader
+                    if !license.hasCommercialLicense {
+                        premiumUpsell
+                    } else {
+                        CloudFolderSyncSettingsView(controller: syncController)
+                    }
                 }
             }
             .padding(22)

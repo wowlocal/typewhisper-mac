@@ -62,8 +62,8 @@ struct SettingsView: View {
             ),
             SettingsDestination(
                 tab: .premium,
-                title: localizedAppText("Premium", de: "Premium"),
-                systemImage: "sparkles",
+                title: AppConstants.isPersonalBuild ? String(localized: "Sync") : localizedAppText("Premium", de: "Premium"),
+                systemImage: AppConstants.isPersonalBuild ? "arrow.triangle.2.circlepath" : "sparkles",
                 badge: nil
             ),
             SettingsDestination(
@@ -73,7 +73,9 @@ struct SettingsView: View {
                 badge: registryService.availableUpdatesCount > 0 ? registryService.availableUpdatesCount : nil
             ),
             SettingsDestination(tab: .advanced, title: String(localized: "Advanced"), systemImage: "gearshape.2", badge: nil),
-            SettingsDestination(tab: .license, title: String(localized: "License"), systemImage: "key", badge: nil),
+            AppConstants.isPersonalBuild
+                ? nil
+                : SettingsDestination(tab: .license, title: String(localized: "License"), systemImage: "key", badge: nil),
             SettingsDestination(tab: .about, title: String(localized: "About"), systemImage: "info.circle", badge: nil)
         ].compactMap { $0 }
     }
@@ -136,7 +138,10 @@ struct SettingsView: View {
     }
 
     static func availableTab(_ tab: SettingsTab, hasRecoveryContent: Bool) -> SettingsTab {
-        tab == .dictationRecovery && !hasRecoveryContent ? .recording : tab
+        if AppConstants.isPersonalBuild && tab == .license {
+            return .home
+        }
+        return tab == .dictationRecovery && !hasRecoveryContent ? .recording : tab
     }
 
     private func navigateToFileTranscriptionIfNeeded() {

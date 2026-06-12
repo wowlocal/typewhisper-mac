@@ -44,3 +44,6 @@ CodeSigning.local.xcconfig
 
 # Git worktrees
 .worktrees/
+
+# Local personal build lock
+.typewhisper-personal-build.lock/

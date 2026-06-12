@@ -14,5 +14,11 @@ struct UpdateChecker: Sendable {
         )
     }
 
+    static let disabled = UpdateChecker(
+        canCheckForUpdates: { false },
+        checkForUpdates: {},
+        resetUpdateCycleAfterSettingsChange: {}
+    )
+
     nonisolated(unsafe) static var shared: UpdateChecker?
 }

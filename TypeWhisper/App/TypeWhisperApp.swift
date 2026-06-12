@@ -56,7 +56,10 @@ private struct MenuBarExtraLabel: View {
     @ObservedObject private var recorder = AudioRecorderViewModel.shared
 
     private var title: String {
-        AppConstants.isDevelopment ? "TypeWhisper Dev" : "TypeWhisper"
+        if AppConstants.isPersonalBuild {
+            return "TypeWhisper Personal"
+        }
+        return AppConstants.isDevelopment ? "TypeWhisper Dev" : "TypeWhisper"
     }
 
     private var isRecordingActive: Bool {
@@ -475,7 +478,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     private lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
 
     var updateChecker: UpdateChecker {
-        .sparkle(updaterController.updater)
+        guard !AppConstants.isPersonalBuild else {
+            return .disabled
+        }
+        return UpdateChecker.sparkle(updaterController.updater)
     }
 
     private var showMenuBarIconPreference: Bool {

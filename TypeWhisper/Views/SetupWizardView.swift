@@ -669,12 +669,21 @@ struct SetupWizardView: View {
             localReadinessCard
 
             recommendationCard(
+                manifestId: SetupWizardSaluteSpeechDefault.manifestId,
+                title: SetupWizardSaluteSpeechDefault.title,
+                badge: localizedAppText("Default", de: "Default"),
+                description: SetupWizardSaluteSpeechDefault.description,
+                systemImage: "cloud.fill",
+                isProminent: true
+            )
+
+            recommendationCard(
                 manifestId: SetupWizardParakeetRecommendation.manifestId,
                 title: "Parakeet",
-                badge: localizedAppText("Recommended", de: "Empfohlen"),
+                badge: localizedAppText("Offline", de: "Offline"),
                 description: SetupWizardParakeetRecommendation.description,
                 systemImage: "desktopcomputer",
-                isProminent: true
+                isProminent: false
             )
 
             appleSpeechCard
@@ -720,6 +729,9 @@ struct SetupWizardView: View {
             return localizedAppText("Activating Parakeet for local dictation", de: "Parakeet wird für lokales Diktieren aktiviert")
         }
         if hasEngineReadyForSetupTest {
+            if selectedTranscriptionEngineForSetup?.providerId == SetupWizardSaluteSpeechDefault.providerId {
+                return localizedAppText("Sber SaluteSpeech is ready for dictation", de: "Sber SaluteSpeech ist bereit für Diktat")
+            }
             if selectedTranscriptionEngineForSetup?.providerId == SetupWizardAppleSpeechFallback.providerId {
                 return localizedAppText("Apple Speech is ready for local dictation", de: "Apple Speech ist für lokales Diktieren bereit")
             }
@@ -730,6 +742,10 @@ struct SetupWizardView: View {
         }
         if isPreparingAppleSpeechFallback {
             return localizedAppText("Preparing Apple Speech for the first test", de: "Apple Speech wird für den ersten Test vorbereitet")
+        }
+        if modelManager.selectedProviderId == SetupWizardSaluteSpeechDefault.providerId,
+           saluteSpeechEngine?.isConfigured != true {
+            return localizedAppText("Connect Sber SaluteSpeech to run the first dictation test", de: "Verbinde Sber SaluteSpeech für den ersten Diktat-Test")
         }
         if canUseAppleSpeechFallback {
             return localizedAppText("Apple Speech can be used locally", de: "Apple Speech kann lokal genutzt werden")
@@ -829,9 +845,11 @@ struct SetupWizardView: View {
         } else {
             switch availability {
             case .ready:
-                if manifestId == SetupWizardParakeetRecommendation.manifestId, isSelected {
+                if isSelected {
                     statusPill(localizedAppText("Selected", de: "Ausgewählt"), systemImage: "checkmark.circle.fill", color: .blue)
                 } else if manifestId == SetupWizardParakeetRecommendation.manifestId {
+                    statusPill(localizedAppText("Select", de: "Auswählen"), systemImage: "circle", color: .blue)
+                } else if manifestId == SetupWizardSaluteSpeechDefault.manifestId {
                     statusPill(localizedAppText("Select", de: "Auswählen"), systemImage: "circle", color: .blue)
                 } else {
                     statusPill(localizedAppText("Ready", de: "Bereit"), systemImage: "checkmark.circle.fill", color: .green)
@@ -839,6 +857,8 @@ struct SetupWizardView: View {
             case .setupRequired:
                 if manifestId == SetupWizardParakeetRecommendation.manifestId {
                     statusPill(localizedAppText("Activate", de: "Aktivieren"), systemImage: "play.circle.fill", color: .blue)
+                } else if manifestId == SetupWizardSaluteSpeechDefault.manifestId, !isSelected {
+                    statusPill(localizedAppText("Connect", de: "Verbinden"), systemImage: "key.fill", color: .blue)
                 } else {
                     RecommendationSettingsButton(manifestId: manifestId)
                 }
@@ -870,9 +890,10 @@ struct SetupWizardView: View {
         availability: SetupWizardRecommendationAvailability,
         isSelected: Bool
     ) -> Bool {
-        guard manifestId == SetupWizardParakeetRecommendation.manifestId, !isSelected else {
+        guard !isSelected else {
             return false
         }
+        guard isSetupRecommendation(manifestId) else { return false }
 
         switch availability {
         case .ready, .setupRequired, .installAvailable:
@@ -886,6 +907,10 @@ struct SetupWizardView: View {
         manifestId: String,
         availability: SetupWizardRecommendationAvailability
     ) -> String {
+        if manifestId == SetupWizardSaluteSpeechDefault.manifestId {
+            return localizedAppText("Selects Sber SaluteSpeech and opens setup if needed.", de: "Wählt Sber SaluteSpeech und öffnet bei Bedarf das Setup.")
+        }
+
         guard manifestId == SetupWizardParakeetRecommendation.manifestId else {
             return ""
         }
@@ -902,8 +927,32 @@ struct SetupWizardView: View {
 
     @MainActor
     private func handleRecommendationCardAction(manifestId: String, registryPlugin: RegistryPlugin?) async {
-        guard manifestId == SetupWizardParakeetRecommendation.manifestId else { return }
-        await activateParakeetForSetup(registryPlugin: registryPlugin)
+        if manifestId == SetupWizardSaluteSpeechDefault.manifestId {
+            activateSaluteSpeechForSetup()
+        } else if manifestId == SetupWizardParakeetRecommendation.manifestId {
+            await activateParakeetForSetup(registryPlugin: registryPlugin)
+        }
+    }
+
+    @MainActor
+    private func activateSaluteSpeechForSetup() {
+        manuallySelectedSetupProviderId = SetupWizardSaluteSpeechDefault.providerId
+
+        if let loaded = pluginManager.loadedPlugins.first(where: { $0.manifest.id == SetupWizardSaluteSpeechDefault.manifestId }),
+           !loaded.isEnabled {
+            pluginManager.setPluginEnabled(SetupWizardSaluteSpeechDefault.manifestId, enabled: true)
+        }
+
+        guard let engine = saluteSpeechEngine else {
+            openRecommendationSettings(manifestId: SetupWizardSaluteSpeechDefault.manifestId)
+            return
+        }
+
+        modelManager.selectProvider(engine.providerId)
+
+        if !engine.isConfigured {
+            openRecommendationSettings(manifestId: SetupWizardSaluteSpeechDefault.manifestId)
+        }
     }
 
     @MainActor
@@ -1240,6 +1289,10 @@ struct SetupWizardView: View {
         pluginManager.transcriptionEngine(for: SetupWizardAppleSpeechFallback.providerId)
     }
 
+    private var saluteSpeechEngine: TranscriptionEnginePlugin? {
+        pluginManager.transcriptionEngine(for: SetupWizardSaluteSpeechDefault.providerId)
+    }
+
     private var parakeetEngine: TranscriptionEnginePlugin? {
         pluginManager.transcriptionEngine(for: SetupWizardParakeetRecommendation.providerId)
     }
@@ -1261,6 +1314,24 @@ struct SetupWizardView: View {
         guard modelManager.canUseForTranscription(engine) else { return false }
         if engine.isConfigured { return true }
         return engine.providerId != SetupWizardAppleSpeechFallback.providerId && engine.selectedModelId != nil
+    }
+
+    private func isSetupRecommendation(_ manifestId: String) -> Bool {
+        manifestId == SetupWizardSaluteSpeechDefault.manifestId
+            || manifestId == SetupWizardParakeetRecommendation.manifestId
+    }
+
+    @MainActor
+    private func openRecommendationSettings(manifestId: String) {
+        if let loaded = pluginManager.loadedPlugins.first(where: { $0.manifest.id == manifestId }) {
+            if !loaded.isEnabled {
+                pluginManager.setPluginEnabled(manifestId, enabled: true)
+            }
+            if let activePlugin = pluginManager.loadedPlugins.first(where: { $0.manifest.id == manifestId }),
+               activePlugin.supportsSettingsWindow {
+                PluginSettingsWindowManager.shared.present(activePlugin)
+            }
+        }
     }
 
     private func canUseAppleSpeechFallbackEngine(_ engine: TranscriptionEnginePlugin?) -> Bool {
@@ -1306,19 +1377,26 @@ struct SetupWizardView: View {
         guard !isActivatingParakeet else { return }
 
         if let manuallySelectedSetupProviderId,
-           let manuallySelectedEngine = pluginManager.transcriptionEngine(for: manuallySelectedSetupProviderId),
-           canUseEngineForSetupTest(manuallySelectedEngine) {
+           let manuallySelectedEngine = pluginManager.transcriptionEngine(for: manuallySelectedSetupProviderId) {
             modelManager.selectProvider(manuallySelectedEngine.providerId)
-            return
+            if manuallySelectedEngine.providerId == SetupWizardSaluteSpeechDefault.providerId || canUseEngineForSetupTest(manuallySelectedEngine) {
+                return
+            }
         }
 
         let selectedEngineReady = selectedTranscriptionEngineForSetup.map(canUseEngineForSetupTest) ?? false
         let preferredProviderId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: modelManager.selectedProviderId,
             selectedEngineReady: selectedEngineReady,
+            saluteSpeechAvailable: saluteSpeechEngine != nil,
             parakeetReady: isParakeetReadyForSetup,
             appleSpeechAvailable: canUseAppleSpeechFallback
         )
+
+        if preferredProviderId == SetupWizardSaluteSpeechDefault.providerId, let saluteSpeechEngine {
+            modelManager.selectProvider(saluteSpeechEngine.providerId)
+            return
+        }
 
         if preferredProviderId == SetupWizardParakeetRecommendation.providerId, let parakeetEngine {
             modelManager.selectProvider(parakeetEngine.providerId)
@@ -1343,6 +1421,7 @@ struct SetupWizardView: View {
               SetupWizardEngineSelection.preferredProviderId(
                 selectedProviderId: modelManager.selectedProviderId,
                 selectedEngineReady: selectedEngineReady,
+                saluteSpeechAvailable: saluteSpeechEngine != nil,
                 parakeetReady: isParakeetReadyForSetup,
                 appleSpeechAvailable: true
               ) == SetupWizardAppleSpeechFallback.providerId else {
@@ -1599,19 +1678,41 @@ enum SetupWizardParakeetRecommendation {
     }
 }
 
+enum SetupWizardSaluteSpeechDefault {
+    static let providerId = "sber-salutespeech"
+    static let manifestId = "com.typewhisper.sber-salutespeech"
+    static let title = "Sber SaluteSpeech"
+
+    static var description: String {
+        localizedAppText(
+            "Cloud transcription through your SaluteSpeech Authorization Key. Good default for Russian dictation.",
+            de: "Cloud-Diktat mit deinem SaluteSpeech Authorization Key. Guter Default für russisches Diktat."
+        )
+    }
+}
+
 enum SetupWizardEngineSelection {
     static func preferredProviderId(
         selectedProviderId: String?,
         selectedEngineReady: Bool,
+        saluteSpeechAvailable: Bool,
         parakeetReady: Bool,
         appleSpeechAvailable: Bool
     ) -> String? {
+        if selectedProviderId == SetupWizardSaluteSpeechDefault.providerId {
+            return SetupWizardSaluteSpeechDefault.providerId
+        }
+
         if parakeetReady, selectedProviderId == SetupWizardAppleSpeechFallback.providerId {
             return SetupWizardParakeetRecommendation.providerId
         }
 
         if selectedEngineReady {
             return selectedProviderId
+        }
+
+        if saluteSpeechAvailable {
+            return SetupWizardSaluteSpeechDefault.providerId
         }
 
         if parakeetReady {

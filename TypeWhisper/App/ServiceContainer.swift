@@ -282,9 +282,11 @@ final class ServiceContainer: ObservableObject {
         memoryService.startListening()
 
         // Validate license if needed
-        await licenseService.validateIfNeeded()
-        await licenseService.validateSupporterIfNeeded()
-        await supporterDiscordService.refreshStatusIfNeeded()
+        if !AppConstants.isPersonalBuild {
+            await licenseService.validateIfNeeded()
+            await licenseService.validateSupporterIfNeeded()
+            await supporterDiscordService.refreshStatusIfNeeded()
+        }
 
         // Auto-start watch folder if configured
         if UserDefaults.standard.bool(forKey: UserDefaultsKeys.watchFolderAutoStart),

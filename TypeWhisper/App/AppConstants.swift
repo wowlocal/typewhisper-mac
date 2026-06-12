@@ -1,6 +1,14 @@
 import Foundation
 
 enum AppConstants {
+    static let isPersonalBuild: Bool = {
+        #if TYPEWHISPER_PERSONAL_BUILD
+        return true
+        #else
+        return false
+        #endif
+    }()
+
     enum ReleaseChannel: String, CaseIterable {
         case stable
         case releaseCandidate = "release-candidate"
@@ -52,7 +60,9 @@ enum AppConstants {
     nonisolated(unsafe) static var testAppSupportDirectoryOverride: URL?
 
     static let appSupportDirectoryName: String = {
-        #if DEBUG
+        #if TYPEWHISPER_PERSONAL_BUILD
+        return "TypeWhisper-Personal"
+        #elseif DEBUG
         return "TypeWhisper-Dev"
         #else
         return "TypeWhisper"
@@ -60,7 +70,9 @@ enum AppConstants {
     }()
 
     static let keychainServicePrefix: String = {
-        #if DEBUG
+        #if TYPEWHISPER_PERSONAL_BUILD
+        return "com.typewhisper.mac.personal.apikey."
+        #elseif DEBUG
         return "com.typewhisper.mac.dev.apikey."
         #else
         return "com.typewhisper.mac.apikey."

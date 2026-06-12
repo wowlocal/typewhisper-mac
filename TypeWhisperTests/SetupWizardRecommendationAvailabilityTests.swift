@@ -69,6 +69,7 @@ final class SetupWizardRecommendationAvailabilityTests: XCTestCase {
         let providerId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: nil,
             selectedEngineReady: false,
+            saluteSpeechAvailable: false,
             parakeetReady: false,
             appleSpeechAvailable: true
         )
@@ -80,6 +81,7 @@ final class SetupWizardRecommendationAvailabilityTests: XCTestCase {
         let providerId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: "groq",
             selectedEngineReady: true,
+            saluteSpeechAvailable: true,
             parakeetReady: true,
             appleSpeechAvailable: true
         )
@@ -91,6 +93,7 @@ final class SetupWizardRecommendationAvailabilityTests: XCTestCase {
         let providerId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: SetupWizardAppleSpeechFallback.providerId,
             selectedEngineReady: true,
+            saluteSpeechAvailable: false,
             parakeetReady: true,
             appleSpeechAvailable: true
         )
@@ -102,6 +105,7 @@ final class SetupWizardRecommendationAvailabilityTests: XCTestCase {
         let providerId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: nil,
             selectedEngineReady: false,
+            saluteSpeechAvailable: false,
             parakeetReady: true,
             appleSpeechAvailable: true
         )
@@ -113,11 +117,36 @@ final class SetupWizardRecommendationAvailabilityTests: XCTestCase {
         let providerId = SetupWizardEngineSelection.preferredProviderId(
             selectedProviderId: nil,
             selectedEngineReady: false,
+            saluteSpeechAvailable: false,
             parakeetReady: false,
             appleSpeechAvailable: false
         )
 
         XCTAssertNil(providerId)
+    }
+
+    func testEngineSelectionPrefersSaluteSpeechBeforeLocalFallbacks() {
+        let providerId = SetupWizardEngineSelection.preferredProviderId(
+            selectedProviderId: nil,
+            selectedEngineReady: false,
+            saluteSpeechAvailable: true,
+            parakeetReady: true,
+            appleSpeechAvailable: true
+        )
+
+        XCTAssertEqual(providerId, SetupWizardSaluteSpeechDefault.providerId)
+    }
+
+    func testEngineSelectionKeepsSelectedSaluteSpeechBeforeItIsConfigured() {
+        let providerId = SetupWizardEngineSelection.preferredProviderId(
+            selectedProviderId: SetupWizardSaluteSpeechDefault.providerId,
+            selectedEngineReady: false,
+            saluteSpeechAvailable: true,
+            parakeetReady: true,
+            appleSpeechAvailable: true
+        )
+
+        XCTAssertEqual(providerId, SetupWizardSaluteSpeechDefault.providerId)
     }
 
     func testParakeetRecommendationPrefersV3Model() {

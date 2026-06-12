@@ -50,26 +50,28 @@ struct AboutSettingsView: View {
                 .padding(.vertical, 12)
             }
 
-            Section {
-                Picker(String(localized: "Update Channel"), selection: updateChannelBinding) {
-                    ForEach(AppConstants.ReleaseChannel.allCases, id: \.self) { channel in
-                        Text(channel.selectionDisplayName)
-                            .tag(channel)
+            if !AppConstants.isPersonalBuild {
+                Section {
+                    Picker(String(localized: "Update Channel"), selection: updateChannelBinding) {
+                        ForEach(AppConstants.ReleaseChannel.allCases, id: \.self) { channel in
+                            Text(channel.selectionDisplayName)
+                                .tag(channel)
+                        }
                     }
-                }
-                .pickerStyle(.menu)
+                    .pickerStyle(.menu)
 
-                Text(selectedUpdateChannel.updateDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    Text(selectedUpdateChannel.updateDescription)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                HStack {
-                    Spacer()
-                    Button(String(localized: "Check for Updates...")) {
-                        UpdateChecker.shared?.checkForUpdates()
+                    HStack {
+                        Spacer()
+                        Button(String(localized: "Check for Updates...")) {
+                            UpdateChecker.shared?.checkForUpdates()
+                        }
+                        .disabled(UpdateChecker.shared?.canCheckForUpdates() != true)
+                        Spacer()
                     }
-                    .disabled(UpdateChecker.shared?.canCheckForUpdates() != true)
-                    Spacer()
                 }
             }
 
